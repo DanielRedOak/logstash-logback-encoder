@@ -60,6 +60,13 @@ public class LogstashEncoderV1 extends LogstashEncoderBase {
         if (throwableProxy != null) {
             eventNode.put("stack_trace", ThrowableProxyUtil.asString(throwableProxy));
         }
+
+        Context context = getContext();
+        if (context != null) {
+            addPropertiesAsFields(eventNode, context.getCopyOfPropertyMap());
+        }
+        addPropertiesAsFields(eventNode, event.getMDCPropertyMap());
+
         write(MAPPER.writeValueAsBytes(eventNode), outputStream);
         write(CoreConstants.LINE_SEPARATOR, outputStream);
         
