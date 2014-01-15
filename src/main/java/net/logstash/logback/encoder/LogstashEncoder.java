@@ -35,20 +35,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class LogstashEncoder extends EncoderBase<ILoggingEvent> {
-    
-    private static final ObjectMapper MAPPER = new ObjectMapper().configure(Feature.ESCAPE_NON_ASCII, true);
-    private static final FastDateFormat ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
-    private static final StackTraceElement DEFAULT_CALLER_DATA = new StackTraceElement("", "", "", 0);
-    
-    private boolean immediateFlush = true;
-    
-    /**
-     * If true, the caller information is included in the logged data.
-     * Note: calculating the caller data is an expensive operation.
-     */
-    private boolean includeCallerInfo = true;
-    
+public class LogstashEncoder extends LogstashEncoderBase {
+
     @Override
     public void doEncode(ILoggingEvent event) throws IOException {
         
@@ -61,7 +49,7 @@ public class LogstashEncoder extends EncoderBase<ILoggingEvent> {
         write(MAPPER.writeValueAsBytes(eventNode), outputStream);
         write(CoreConstants.LINE_SEPARATOR, outputStream);
         
-        if (immediateFlush) {
+        if (isImmediateFlush()) {
             outputStream.flush();
         }
         
@@ -75,7 +63,7 @@ public class LogstashEncoder extends EncoderBase<ILoggingEvent> {
         fieldsNode.put("level", event.getLevel().toString());
         fieldsNode.put("level_value", event.getLevel().toInt());
         
-        if (includeCallerInfo) {
+        if (isIncludeCallerInfo()) {
             StackTraceElement callerData = extractCallerData(event);
             fieldsNode.put("caller_class_name", callerData.getClassName());
             fieldsNode.put("caller_method_name", callerData.getMethodName());
@@ -97,67 +85,5 @@ public class LogstashEncoder extends EncoderBase<ILoggingEvent> {
         return fieldsNode;
         
     }
-    
-    private ArrayNode createTags(ILoggingEvent event) {
-        ArrayNode node = null;
-        final Marker marker = event.getMarker();
-        
-        if (marker != null) {
-            node = MAPPER.createArrayNode();
-            node.add(marker.getName());
-            
-            if (marker.hasReferences()) {
-                final Iterator<?> i = event.getMarker().iterator();
-                
-                while (i.hasNext()) {
-                    Marker next = (Marker) i.next();
-                    
-                    // attached markers will never be null as provided by the MarkerFactory.
-                    node.add(next.getName());
-                }
-            }
-        }
-        
-        return node;
-    }
-    
-    private void addPropertiesAsFields(final ObjectNode fieldsNode, final Map<String, String> properties) {
-        if (properties != null) {
-            for (Entry<String, String> entry : properties.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue();
-                fieldsNode.put(key, value);
-            }
-        }
-    }
-    
-    private StackTraceElement extractCallerData(final ILoggingEvent event) {
-        final StackTraceElement[] ste = event.getCallerData();
-        if (ste == null || ste.length == 0) {
-            return DEFAULT_CALLER_DATA;
-        }
-        return ste[0];
-    }
-    
-    @Override
-    public void close() throws IOException {
-        write(LINE_SEPARATOR, outputStream);
-    }
-    
-    public boolean isImmediateFlush() {
-        return immediateFlush;
-    }
-    
-    public void setImmediateFlush(boolean immediateFlush) {
-        this.immediateFlush = immediateFlush;
-    }
-    
-    public boolean isIncludeCallerInfo() {
-        return includeCallerInfo;
-    }
-    
-    public void setIncludeCallerInfo(boolean includeCallerInfo) {
-        this.includeCallerInfo = includeCallerInfo;
-    }
-    
+
 }

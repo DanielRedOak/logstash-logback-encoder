@@ -13,19 +13,21 @@
  */
 package net.logstash.logback.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-
 import java.io.ByteArrayOutputStream;
 
-public class LogstashEncoderTest extends LogstashEncoderTestCommon {
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Before;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class LogstashEncoderV1Test extends LogstashEncoderTestCommon {
+    
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private LogstashEncoder encoder;
+    private LogstashEncoderV1 encoder;
     private ByteArrayOutputStream outputStream;
 
-    public LogstashEncoderTest() {
-        super("@message", "@tags");
+    public LogstashEncoderV1Test() {
+        super("message", "tags");
     }
 
     protected LogstashEncoderBase encoder() {
@@ -38,13 +40,15 @@ public class LogstashEncoderTest extends LogstashEncoderTestCommon {
     }
 
     protected JsonNode field(JsonNode node, String name) {
-        return node.get("@fields").get(name);
+        return node.get(name);
     }
 
     @Before
     public void before() throws Exception {
         outputStream = new ByteArrayOutputStream();
-        encoder = new LogstashEncoder();
+        encoder = new LogstashEncoderV1();
         encoder.init(outputStream);
     }
+    
+
 }
