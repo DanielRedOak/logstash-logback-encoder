@@ -1,5 +1,7 @@
 # Logback JSON encoder for Logstash
 
+*Deprecated in favor of upstream changes*
+
 First, add it to your project as a dependency.
 
 Maven style:
